@@ -49,7 +49,8 @@ class CassBot(irc.IRCClient):
     def privmsg(self, user, channel, msg):
         if not user:
             return
-        logging.info('<' + user.split('!')[0] + '> ' + msg)
+        if not user.startswith('evn'):
+            logging.info('<' + user.split('!')[0] + '> ' + msg)
         self.ticketCallback(user, msg)
         self.logsCallback(user, msg)
 
