@@ -9,6 +9,7 @@ from twisted.words.protocols import irc
 from twisted.internet import reactor, protocol
 
 TICKET_RE = re.compile(r'#(\d+)')
+COMMIT_RE = re.compile(r'r(\d+)')
 
 LOG_BLACKLIST = [
     'evn',
@@ -39,7 +40,7 @@ class CassBot(irc.IRCClient):
         if not match:
             return
         ticket = int(match.group(1))
-        url = 'http://issues.apache.org/jira/browse/CASSANDRA-%s' % (ticket,)
+        url = 'http://issues.apache.org/jira/browse/CASSANDRA-%d' % (ticket,)
         self.msg(self.factory.channel, url)
     
     def logsCallback(self, user, msg):
@@ -48,6 +49,14 @@ class CassBot(irc.IRCClient):
         if 'logs' not in msg.lower():
             return
         self.msg(self.factory.channel, 'http://www.eflorenzano.com/cassbot/')
+
+    def commitCallback(self, user, msg):
+        match = COMMIT_RE.search(msg)
+        if not match:
+            return
+        commit = int(match.group(1))
+        url = 'http://svn.apache.org/viewvc?view=rev&revision=%d' % (commit,)
+        self.msg(self.factory.channel, url)
     
     def privmsg(self, user, channel, msg):
         if not user:
@@ -56,6 +65,7 @@ class CassBot(irc.IRCClient):
             logging.info('<' + user.split('!')[0] + '> ' + msg)
         self.ticketCallback(user, msg)
         self.logsCallback(user, msg)
+        self.commitCallback(user, msg)
 
 class CassBotFactory(protocol.ClientFactory):
     protocol = CassBot
