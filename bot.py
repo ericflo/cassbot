@@ -10,6 +10,9 @@ from twisted.internet import reactor, protocol
 
 TICKET_RE = re.compile(r'#(\d+)')
 
+LOG_BLACKLIST = [
+    'evn',
+]
 LOG_FILE = '/var/log/cassandra/irc-log'
 
 logger = logging.getLogger()
@@ -49,7 +52,7 @@ class CassBot(irc.IRCClient):
     def privmsg(self, user, channel, msg):
         if not user:
             return
-        if not user.startswith('evn'):
+        if not user.split('|')[0].rstrip('_') in LOG_BLACKLIST:
             logging.info('<' + user.split('!')[0] + '> ' + msg)
         self.ticketCallback(user, msg)
         self.logsCallback(user, msg)
