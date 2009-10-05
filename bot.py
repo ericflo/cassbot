@@ -67,19 +67,14 @@ class CassBot(irc.IRCClient):
         self.logsCallback(user, msg)
         self.commitCallback(user, msg)
 
-class CassBotFactory(protocol.ClientFactory):
+
+class CassBotFactory(protocol.ReconnectingClientFactory):
     protocol = CassBot
     
     def __init__(self, channel='#cassandra', nickname='CassBot'):
         self.channel = channel
         self.nickname = nickname
-    
-    def clientConnectionLost(self, connector, reason):
-        print >> sys.stderr, "Lost connection (%s), reconnecting." % (reason,)
-        connector.connect()
-    
-    def clientConnectionFailed(self, connector, reason):
-        print >> sys.stderr, "Could not connect: %s" % (reason,)
+
  
 if __name__ == "__main__":
     reactor.connectTCP('irc.freenode.net', 6667, CassBotFactory())
