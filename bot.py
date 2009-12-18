@@ -7,14 +7,19 @@ import logging.handlers
 
 from twisted.words.protocols import irc
 from twisted.internet import reactor, protocol
+from twisted.web.client import getPage
 
 TICKET_RE = re.compile(r'#(\d+)')
 COMMIT_RE = re.compile(r'r(\d+)')
+BUILD_RE = re.compile(r'build ([\w\-]+)')
 
 LOG_BLACKLIST = [
     'evn',
 ]
 LOG_FILE = '/var/log/cassandra/irc-log'
+
+BUILD_TOKEN = 'xxxxxxxxxxxx'
+BUILD_URL = 'http://hudson.zones.apache.org/hudson/job'
 
 logger = logging.getLogger()
 handler = logging.handlers.TimedRotatingFileHandler(LOG_FILE, 'midnight', 1)
@@ -57,6 +62,23 @@ class CassBot(irc.IRCClient):
         commit = int(match.group(1))
         url = 'http://svn.apache.org/viewvc?view=rev&revision=%d' % (commit,)
         self.msg(self.factory.channel, url)
+
+    def buildCallback(self, user, msg):
+        if self.nickname.lower() not in msg.lower():
+            return
+
+        match = BUILD_RE.search(msg)
+        if not match:
+            return
+
+        build = match.group(1)
+        url = '%s/%s/polling?token=%s' % (BUILD_URL, build, BUILD_TOKEN)
+        user = user.split('!', 1)[0]
+
+        # Hudson returns a 404 even when this request succeeds :/
+        def queued(result):
+            self.msg(self.factory.channel, "%s: request sent!" % (user,))
+        dfr = getPage(url).addCallbacks(callback=queued, errback=queued)
     
     def privmsg(self, user, channel, msg):
         if not user:
@@ -66,6 +88,7 @@ class CassBot(irc.IRCClient):
         self.ticketCallback(user, msg)
         self.logsCallback(user, msg)
         self.commitCallback(user, msg)
+        self.buildCallback(user, msg)
 
 
 class CassBotFactory(protocol.ReconnectingClientFactory):
