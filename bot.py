@@ -85,7 +85,7 @@ class CassBot(irc.IRCClient):
             channel = user
         else:
             if user not in LOG_BLACKLIST:
-                logging.info('<' + user + '> ' + msg)
+                logging.info('[%s] <%s> %s' % (channel, user, msg))
             self.checklinks(channel, msg)
             return
         parts = msg.split(' ', 1)
