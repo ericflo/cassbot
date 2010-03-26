@@ -34,7 +34,8 @@ class CassBot(irc.IRCClient):
     nickname = property(_get_nickname)
     
     def signedOn(self):
-        self.join(self.factory.channel)
+        for chan in self.factory.channels:
+            self.join(chan)
         print "Signed on as %s." % (self.nickname,)
     
     def joined(self, channel):
@@ -45,13 +46,13 @@ class CassBot(irc.IRCClient):
         if match:
             ticket = int(match.group(1))
             url = 'http://issues.apache.org/jira/browse/CASSANDRA-%d' % (ticket,)
-            self.msg(self.factory.channel, url)
+            self.msg(user, url)
         else:
             match = COMMIT_RE.search(msg)
             if match:
                 commit = int(match.group(1))
                 url = 'http://svn.apache.org/viewvc?view=rev&revision=%d' % (commit,)
-                self.msg(self.factory.channel, url)
+                self.msg(user, url)
     
     def command_LOGS(self, user, channel, args):
         self.msg(channel, 'http://www.eflorenzano.com/cassbot/')
@@ -85,7 +86,7 @@ class CassBot(irc.IRCClient):
         else:
             if user not in LOG_BLACKLIST:
                 logging.info('<' + user + '> ' + msg)
-            self.checklinks(user, msg)
+            self.checklinks(channel, msg)
             return
         parts = msg.split(' ', 1)
         if len(parts) == 1:
@@ -104,8 +105,8 @@ class CassBot(irc.IRCClient):
 class CassBotFactory(protocol.ReconnectingClientFactory):
     protocol = CassBot
     
-    def __init__(self, channel='#cassandra', nickname='CassBot'):
-        self.channel = channel
+    def __init__(self, channels=['#cassandra', '#cassandra-dev'], nickname='CassBot'):
+        self.channels = channels
         self.nickname = nickname
 
  
