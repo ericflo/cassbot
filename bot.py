@@ -21,13 +21,6 @@ LOG_FILE = '/var/log/cassandra/irc-log'
 BUILD_TOKEN = 'xxxxxxxxxxxx'
 BUILD_URL = 'http://hudson.zones.apache.org/hudson/job'
 
-logger = logging.getLogger()
-handler = logging.handlers.TimedRotatingFileHandler(LOG_FILE, 'midnight', 1)
-formatter = logging.Formatter("%(asctime)s %(message)s")
-handler.setFormatter(formatter)
-logger.addHandler(handler)
-logger.setLevel(logging.INFO)
-
 class CassBot(irc.IRCClient):
     def _get_nickname(self):
         return self.factory.nickname
@@ -111,5 +104,12 @@ class CassBotFactory(protocol.ReconnectingClientFactory):
 
  
 if __name__ == "__main__":
+    logger = logging.getLogger()
+    handler = logging.handlers.TimedRotatingFileHandler(LOG_FILE, 'midnight', 1)
+    formatter = logging.Formatter("%(asctime)s %(message)s")
+    handler.setFormatter(formatter)
+    logger.addHandler(handler)
+    logger.setLevel(logging.INFO)
+
     reactor.connectTCP('irc.freenode.net', 6667, CassBotFactory())
     reactor.run()
