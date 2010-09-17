@@ -10,8 +10,8 @@ from twisted.internet import reactor, defer, protocol
 from twisted.web.client import getPage
 from twisted.web.error import Error
 
-TICKET_RE = re.compile(r'#(\d+)')
-COMMIT_RE = re.compile(r'(?:^|(\s))r(\d+)')
+TICKET_RE = re.compile(r'(?:^|[]\s[(){}<>/:",-])#(\d+)\b')
+COMMIT_RE = re.compile(r'\br(\d+)\b')
 
 # This was the original. It was broken.
 # COMMIT_RE = re.compile(r'r(\d+)')
