@@ -100,8 +100,8 @@ class CassBot(irc.IRCClient):
         if meth:
             try:
                 meth(user, channel, args)
-            except Exception, e:
-                print "Exception in %s: %s" % (cmd, e)
+            except Exception:
+                logging.exception("Exception in %s" % (cmd,))
                 self.msg(channel, "Ah crap, I got an exception :(")
         else:
             self.msg(channel, "Unknown command: %s" % cmd)
