@@ -36,20 +36,23 @@ class CassBot(irc.IRCClient):
     
     def joined(self, channel):
         print "Joined %s." % (channel,)
-    
-    def checklinks(self, user, msg):
-        match = TICKET_RE.search(msg)
-        if match:
+
+    def checktickets(self, user, msg):
+        for match in TICKET_RE.finditer(msg):
             ticket = int(match.group(1))
             url = 'http://issues.apache.org/jira/browse/CASSANDRA-%d' % (ticket,)
             self.msg(user, url)
-        else:
-            match = COMMIT_RE.search(msg)
-            if match:
-                commit = int(match.group(1))
-                url = 'http://svn.apache.org/viewvc?view=rev&revision=%d' % (commit,)
-                self.msg(user, url)
-    
+
+    def checkrevs(self, user, msg):
+        for match in COMMIT_RE.finditer(msg):
+            commit = int(match.group(1))
+            url = 'http://svn.apache.org/viewvc?view=rev&revision=%d' % (commit,)
+            self.msg(user, url)
+
+    def checklinks(self, user, msg):
+        self.checktickets(user, msg)
+        self.checkrevs(user, msg)
+
     def command_LOGS(self, user, channel, args):
         self.msg(channel, 'http://www.eflorenzano.com/cassbot/')
 
@@ -73,21 +76,22 @@ class CassBot(irc.IRCClient):
         self.msg(channel, msg)
     
     def privmsg(self, user, channel, msg):
-        self.checklinks(channel, msg)
         user = user.split('!', 1)[0]
+        if user not in LOG_BLACKLIST:
+            logging.info('[%s] <%s> %s' % (channel, user, msg))
         if msg.lower().startswith(self.nickname.lower()):
             msg = msg[len(self.nickname):]
             msg = msg.lstrip(';: ')
+            self.process_commands(user, channel, msg)
         elif channel == self.nickname:
             channel = user
-        else:
-            if user not in LOG_BLACKLIST:
-                logging.info('[%s] <%s> %s' % (channel, user, msg))
-            return
-        parts = msg.split(' ', 1)
-        if len(parts) == 1:
-            parts = parts + ['']
-        cmd, args = parts
+            self.process_commands(user, channel, msg)
+        self.checklinks(channel, msg)
+
+    def process_commands(self, user, channel, msg):
+        parts = msg.split(None, 1)
+        cmd = parts[0]
+        args = parts[1:]
         meth = getattr(self, 'command_' + cmd.upper(), None)
         if meth:
             try:
