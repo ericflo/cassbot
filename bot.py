@@ -75,8 +75,8 @@ class CassBot(irc.IRCClient):
     def privmsg(self, user, channel, msg):
         self.checklinks(channel, msg)
         user = user.split('!', 1)[0]
-        if msg.startswith("%s" % self.nickname):
-            msg = msg[len("%s" % self.nickname):]
+        if msg.lower().startswith(self.nickname.lower()):
+            msg = msg[len(self.nickname):]
             msg = msg.lstrip(';: ')
         elif channel == self.nickname:
             channel = user
