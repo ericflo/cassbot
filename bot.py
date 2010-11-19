@@ -73,6 +73,7 @@ class CassBot(irc.IRCClient):
         self.msg(channel, msg)
     
     def privmsg(self, user, channel, msg):
+        self.checklinks(channel, msg)
         user = user.split('!', 1)[0]
         if msg.startswith("%s" % self.nickname):
             msg = msg[len("%s" % self.nickname):]
@@ -82,7 +83,6 @@ class CassBot(irc.IRCClient):
         else:
             if user not in LOG_BLACKLIST:
                 logging.info('[%s] <%s> %s' % (channel, user, msg))
-            self.checklinks(channel, msg)
             return
         parts = msg.split(' ', 1)
         if len(parts) == 1:
