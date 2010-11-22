@@ -75,9 +75,9 @@ class CassBot(irc.IRCClient):
             msg = user + ': ' + msg
         self.msg(channel, msg)
 
-    def msg(self, dest, msg):
+    def msg(self, dest, msg, length=None):
         logging.info('[%s] <%s> %s' % (dest, self.nickname, msg))
-        irc.IRCClient.msg(self, dest, msg)
+        irc.IRCClient.msg(self, dest, msg, length=length)
 
     def privmsg(self, user, channel, msg):
         user = user.split('!', 1)[0]
