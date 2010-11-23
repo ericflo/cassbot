@@ -26,14 +26,63 @@ class CassBot(irc.IRCClient):
     def _get_nickname(self):
         return self.factory.nickname
     nickname = property(_get_nickname)
-    
+
+    def irclog(self, *a, **kw):
+        kw['mtype'] = 'irclog'
+        return log.msg(*a, **kw)
+
     def signedOn(self):
         for chan in self.factory.channels:
             self.join(chan)
-        print "Signed on as %s." % (self.nickname,)
-    
+        self.irclog("Signed on as %s." % (self.nickname,))
+
     def joined(self, channel):
-        print "Joined %s." % (channel,)
+        self.irclog("Joined %s." % (channel,))
+
+    def left(self, channel):
+        self.irclog("Left %s." % (channel,))
+
+    def noticed(self, user, chan, msg):
+        self.irclog("NOTICE -!- [%s] <%s> %s" % (chan, user, msg))
+
+    def modeChanged(self, user, chan, being_set, modes, args):
+        self.irclog("MODE -!- %s %s modes %r in %r for %r" % (
+            user,
+            'set' if being_set else 'unset',
+            modes,
+            chan,
+            args
+        ))
+
+    def kickedFrom(self, chan, kicker, msg):
+        self.irclog('KICKED -!- from %s by %s [%s]' % (chan, kicker, msg))
+
+    def nickChanged(self, nick):
+        self.irclog('NICKCHANGE -!- my nick changed to %s' % (nick,))
+
+    def userJoined(self, user, chan):
+        self.irclog('%s joined %s' % (user, chan))
+
+    def userLeft(self, user, chan):
+        self.irclog('%s left %s' % (user, chan))
+
+    def userQuit(self, user, msg):
+        self.irclog('%s quit [%s]' % (user, msg))
+
+    def userKicked(self, kickee, chan, kicker, msg):
+        self.irclog('%s was kicked from %s by %s [%s]' % (kickee, chan, kicker, msg))
+
+    def action(self, user, chan, data):
+        self.irclog('[%s] * %s %s' % (chan, user, data))
+
+    def topicUpdated(self, user, chan, newtopic):
+        self.irclog('[%s] -!- topic changed by %s to %r' % (chan, user, newtopic))
+
+    def userRenamed(self, oldname, newname):
+        self.irclog('RENAME %s is now known as %s' % (oldname, newname))
+
+    def receivedMOTD(self, motd):
+        self.irclog('MOTD %s' % (motd,))
 
     def checktickets(self, user, msg):
         for match in TICKET_RE.finditer(msg):
@@ -74,13 +123,13 @@ class CassBot(irc.IRCClient):
         self.msg(channel, msg)
 
     def msg(self, dest, msg, length=None):
-        log.msg('[%s] <%s> %s' % (dest, self.nickname, msg), mtype='irclog')
+        self.irclog('[%s] <%s> %s' % (dest, self.nickname, msg))
         irc.IRCClient.msg(self, dest, msg, length=length)
 
     def privmsg(self, user, channel, msg):
         user = user.split('!', 1)[0]
         if user not in LOG_BLACKLIST:
-            log.msg('[%s] <%s> %s' % (channel, user, msg), mtype='irclog')
+            self.irclog('[%s] <%s> %s' % (channel, user, msg))
         if msg.lower().startswith(self.nickname.lower()):
             msg = msg[len(self.nickname):]
             msg = msg.lstrip(';: ')
