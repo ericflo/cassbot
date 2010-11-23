@@ -2,13 +2,11 @@
 
 import re
 import sys
-import logging
-import logging.handlers
-
 from twisted.words.protocols import irc
 from twisted.internet import reactor, defer, protocol
 from twisted.web.client import getPage
 from twisted.web.error import Error
+from twisted.python import log, logfile
 
 TICKET_RE = re.compile(r'(?:^|[]\s[(){}<>/:",-])#(\d+)\b')
 COMMIT_RE = re.compile(r'\br(\d+)\b')
@@ -76,13 +74,13 @@ class CassBot(irc.IRCClient):
         self.msg(channel, msg)
 
     def msg(self, dest, msg, length=None):
-        logging.info('[%s] <%s> %s' % (dest, self.nickname, msg))
+        log.msg('[%s] <%s> %s' % (dest, self.nickname, msg), mtype='irclog')
         irc.IRCClient.msg(self, dest, msg, length=length)
 
     def privmsg(self, user, channel, msg):
         user = user.split('!', 1)[0]
         if user not in LOG_BLACKLIST:
-            logging.info('[%s] <%s> %s' % (channel, user, msg))
+            log.msg('[%s] <%s> %s' % (channel, user, msg), mtype='irclog')
         if msg.lower().startswith(self.nickname.lower()):
             msg = msg[len(self.nickname):]
             msg = msg.lstrip(';: ')
@@ -101,7 +99,7 @@ class CassBot(irc.IRCClient):
             try:
                 meth(user, channel, args)
             except Exception:
-                logging.exception("Exception in %s" % (cmd,))
+                log.err(None, "Exception in %s" % (cmd,))
                 self.msg(channel, "Ah crap, I got an exception :(")
         else:
             self.msg(channel, "Unknown command: %s" % cmd)
@@ -115,12 +113,9 @@ class CassBotFactory(protocol.ReconnectingClientFactory):
 
  
 if __name__ == "__main__":
-    logger = logging.getLogger()
-    handler = logging.handlers.TimedRotatingFileHandler(LOG_FILE, 'midnight', 1)
-    formatter = logging.Formatter("%(asctime)s %(message)s")
-    handler.setFormatter(formatter)
-    logger.addHandler(handler)
-    logger.setLevel(logging.INFO)
+    logf = logfile.DailyLogFile.fromFullPath(LOG_FILE)
+    observer = log.FileLogObserver(logf)
+    log.startLoggingWithObserver(observer)
 
     reactor.connectTCP('irc.freenode.net', 6667, CassBotFactory())
     reactor.run()
