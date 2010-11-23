@@ -90,6 +90,7 @@ class CassBot(irc.IRCClient):
             self.process_commands(user, channel, msg)
         self.checklinks(channel, msg)
 
+    @defer.inlineCallbacks
     def process_commands(self, user, channel, msg):
         parts = msg.split(None, 1)
         cmd = parts[0]
@@ -97,7 +98,7 @@ class CassBot(irc.IRCClient):
         meth = getattr(self, 'command_' + cmd.upper(), None)
         if meth:
             try:
-                meth(user, channel, args)
+                yield meth(user, channel, args)
             except Exception:
                 log.err(None, "Exception in %s" % (cmd,))
                 self.msg(channel, "Ah crap, I got an exception :(")
