@@ -48,6 +48,8 @@ class CassBot(irc.IRCClient):
         match = TICKET_RE.search(msg)
         if match:
             ticket = int(match.group(1))
+            if ticket < 10:
+                return
             url = 'http://issues.apache.org/jira/browse/CASSANDRA-%d' % (ticket,)
             self.msg(user, url)
         else:
